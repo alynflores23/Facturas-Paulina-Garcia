@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Paulina García - Videojet</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root { --primary: #2c3e50; --accent: #3498db; --success: #27ae60; }
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
+        .sidebar { background: var(--primary); color: white; min-height: 100vh; padding: 25px; transition: 0.3s; }
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; left: -100%; width: 100%; z-index: 1050; height: 100%; overflow-y: auto; }
+            .sidebar.active { left: 0; }
+        }
+        .main-content { padding: 20px; }
+        .table-container { background: white; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); padding: 15px; overflow-x: auto; }
+        .stats-banner { background: white; border-radius: 12px; padding: 15px; margin-bottom: 20px; border-left: 5px solid var(--success); }
+        .concepto-link { color: var(--accent); cursor: pointer; text-decoration: underline; font-weight: bold; }
+        .form-label { font-size: 0.7rem; font-weight: bold; color: #adb5bd; text-transform: uppercase; }
+        .file-box { background: rgba(255,255,255,0.05); padding: 8px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #3e4f5f; }
+        .btn-flotante { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: var(--accent); color: white; border-radius: 50%; border: none; font-size: 24px; z-index: 1060; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        @media (max-width: 768px) { .btn-flotante { display: block; } }
+        .mes-header { background: #e9ecef; color: var(--primary); font-weight: bold; padding: 10px 15px; border-radius: 8px; margin-top: 25px; font-size: 0.9rem; text-transform: uppercase; border-left: 5px solid var(--accent); }
+        .conglomerado-box { background: var(--primary); color: white; padding: 20px; border-radius: 15px; margin-top: 40px; }
+        .na-text { font-size: 0.7rem; color: #adb5bd; font-style: italic; }
+        .edit-mode { border: 3px solid #f1c40f !important; }
+    </style>
+</head>
+<body>
+
+<button class="btn-flotante" onclick="toggleSidebar()"><i class="bi bi-plus-lg"></i></button>
+
+<div class="container-fluid">
+    <div class="row">
+        <aside class="col-md-3 sidebar shadow-lg" id="sidebarAdmin">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="text-info fw-bold mb-0" id="formTitle">NUEVO GASTO</h6>
+                <button class="btn btn-sm btn-outline-light d-md-none" onclick="toggleSidebar()">X</button>
+            </div>
+            
+            <form id="facturaForm">
+                <input type="hidden" id="editId">
+                <div class="mb-2"><label class="form-label text-warning">Concepto</label><input type="text" id="concepto" class="form-control form-control-sm" required></div>
+                <div class="mb-2"><label class="form-label">Proveedor / Empresa</label><input type="text" id="nombreProv" class="form-control form-control-sm" required></div>
+                <div class="mb-2"><label class="form-label">RFC Empresa</label><input type="text" id="rfc" class="form-control form-control-sm" required></div>
+                
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label class="form-label text-info">Proyecto</label>
+                        <select id="proyectoSel" class="form-select form-select-sm">
+                            <option value="General">General (Sin proyecto)</option>
+                            <option value="EXPOPACK 2026">EXPOPACK 2026</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label text-success">Categoría</label>
+                        <select id="categoriaSel" class="form-select form-select-sm">
+                            <option value="Alimentos">Alimentos</option>
+                            <option value="Estacionamiento/parking">Estacionamiento / Parking</option>
+                            <option value="Gasolina">Gasolina</option>
+                            <option value="Papelería">Papelería</option>
+                            <option value="Servicios">Servicios</option>
+                            <option value="Otro" selected>Otro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-2 mb-2">
+                    <div class="col-6"><label class="form-label">Fecha 1</label><input type="date" id="fecha" class="form-control form-control-sm" required></div>
+                    <!-- AQUÍ NOS ASEGURAMOS DE QUE SEA 100% OPCIONAL -->
+                    <div class="col-6"><label class="form-label text-muted">Fecha 2 (Opcional)</label><input type="date" id="fecha2" class="form-control form-control-sm"></div>
+                </div>
+                
+                <div class="mb-2">
+                    <label class="form-label">País</label>
+                    <select id="paisSel" class="form-select form-select-sm" onchange="toggleOtroPais()">
+                        <option value="México">México</option>
+                        <option value="Extranjero">Extranjero</option>
+                    </select>
+                </div>
+                <input type="text" id="otroPaisInput" class="form-control form-control-sm mb-2" style="display:none;" placeholder="Escribe el país">
+
+                <div class="mb-2">
+                    <label class="form-label text-white">Notas / Estatus</label>
+                    <input type="text" id="notas" class="form-control form-control-sm" placeholder="Ej. Pagado, Pendiente, Reembolso...">
+                </div>
+
+                <div class="p-2 border rounded border-secondary bg-dark bg-opacity-25 mb-3 mt-3">
+                    <div class="row g-2 mb-2">
+                        <div class="col-6"><label class="form-label text-white">Subtotal</label><input type="number" step="0.01" id="subtotal" class="form-control form-control-sm" onkeyup="sumarTotal()" required></div>
+                        <div class="col-6"><label class="form-label text-white">IVA</label><input type="number" step="0.01" id="iva" class="form-control form-control-sm" onkeyup="sumarTotal()" required></div>
+                    </div>
+                    <input type="number" id="importeTotal" class="form-control form-control-sm mb-2 text-center fw-bold" readonly placeholder="Total">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <select id="monedaSel" class="form-select form-select-sm" onchange="toggleOtraMoneda()">
+                                <option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="Otra">Otra</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <select id="metodo" class="form-select form-select-sm">
+                                <option value="Efectivo">Efectivo</option><option value="Tarjeta">Tarjeta</option>
+                            </select>
+                        </div>
+                    </div>
+                    <input type="text" id="otraMonedaInput" class="form-control form-control-sm mt-2" style="display:none;" placeholder="Moneda">
+                </div>
+
+                <div class="file-box"><label class="form-label text-danger small">Factura PDF</label><input type="file" class="form-control form-control-sm" onchange="setFileName('fPdf', this)"> <input type="hidden" id="fPdf" value="N/A"></div>
+                <div class="file-box"><label class="form-label text-info small">Factura XML</label><input type="file" class="form-control form-control-sm" onchange="setFileName('fXml', this)"> <input type="hidden" id="fXml" value="N/A"></div>
+                
+                <div class="file-box mb-3">
+                    <label class="form-label text-warning small">Tickets / Imágenes (Puedes elegir varios)</label>
+                    <input type="file" class="form-control form-control-sm" multiple onchange="setFileNamesMulti('tPdf', this)"> 
+                    <input type="hidden" id="tPdf" value="N/A">
+                </div>
+
+                <button type="submit" id="btnSubmit" class="btn btn-info btn-sm w-100 fw-bold shadow">GUARDAR GASTO</button>
+                <button type="button" id="btnCancelar" class="btn btn-secondary btn-sm w-100 mt-2 d-none" onclick="cancelarEdicion()">CANCELAR</button>
+                <hr class="border-secondary">
+                <button type="button" class="btn btn-outline-light btn-sm w-100" onclick="exportarJSON()">GENERAR DATOS.JSON</button>
+            </form>
+        </aside>
+
+        <main class="col-md-9 main-content">
+            <ul class="nav nav-pills mb-4 shadow-sm bg-white p-2 rounded-pill small" role="tablist">
+                <li class="nav-item flex-fill"><button class="nav-link active w-100 rounded-pill py-2" data-bs-toggle="pill" data-bs-target="#panel-gastos">LISTADO</button></li>
+                <li class="nav-item flex-fill"><button class="nav-link w-100 rounded-pill py-2" data-bs-toggle="pill" data-bs-target="#panel-fiscal">DATOS VTM</button></li>
+            </ul>
+
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="panel-gastos">
+                    
+                    <div class="stats-banner d-flex flex-wrap justify-content-between align-items-center shadow-sm gap-2">
+                        <div class="mb-2 mb-md-0"><span class="small text-muted fw-bold">TOTAL SELECCIONADO:</span><div id="totalMes" class="h5 mb-0 text-success">$ 0.00</div></div>
+                        
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-success fw-bold text-white shadow-sm" onclick="exportarExcelSeleccionados()">
+                                <i class="bi bi-file-earmark-excel-fill me-1"></i> Excel
+                            </button>
+                            <button class="btn btn-sm btn-danger fw-bold shadow-sm" onclick="descargarDocumentosEnVolumen()">
+                                <i class="bi bi-download me-1"></i> Archivos
+                            </button>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2 flex-grow-1 justify-content-end">
+                            <select id="filtroProyecto" class="form-select form-select-sm w-auto border-0 bg-light shadow-sm" onchange="buscar()">
+                                <option value="Todos">Todos los Proyectos</option>
+                                <option value="EXPOPACK 2026">EXPOPACK 2026</option>
+                            </select>
+
+                            <select id="filtroCategoria" class="form-select form-select-sm w-auto border-0 bg-light shadow-sm" onchange="buscar()">
+                                <option value="Todas">Todas las Categorías</option>
+                                <option value="Alimentos">Alimentos</option>
+                                <option value="Estacionamiento/parking">Parking</option>
+                                <option value="Gasolina">Gasolina</option>
+                                <option value="Papelería">Papelería</option>
+                                <option value="Servicios">Servicios</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+
+                            <select id="filtroMetodo" class="form-select form-select-sm w-auto border-0 bg-light shadow-sm" onchange="buscar()">
+                                <option value="Todos">Método: Todos</option>
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Tarjeta">Tarjeta</option>
+                            </select>
+                            
+                            <input type="text" id="buscador" class="form-control form-control-sm w-auto border-0 bg-light shadow-sm" placeholder="Buscar..." onkeyup="buscar()">
+                        </div>
+                    </div>
+                    <div id="contenedorMeses"></div>
+                    
+                    <div class="conglomerado-box shadow-lg">
+                        <h6 class="text-info mb-3 fw-bold"><i class="bi bi-calculator me-2"></i> RESUMEN TOTAL ANUAL (2026)</h6>
+                        <div id="resumenAnual" class="row g-3"></div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="panel-fiscal">
+                    <div class="bg-white p-5 rounded-4 shadow-sm text-center">
+                        <h4 class="text-primary fw-bold mb-3">VIDEOJET TECHNOLOGIES MEXICO S. DE R.L. DE C.V.</h4>
+                        <div class="badge bg-danger fs-6 mb-4 p-2 px-3">RFC: VTM100722SD9 </div>
+                        <div class="badge bg-danger fs-6 mb-4 p-2 px-3"> idCif: 14110352760 </div>
+                        <p class="text-muted text-uppercase mb-1 small">Av. Revolución 1267, Piso 18 Ofic. 1801-A, Alpes, Álvaro Obregón, CDMX. CP 01040</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<div class="modal fade" id="detalleModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-primary text-white p-2"><h6 class="modal-title">Detalle del Gasto</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body" id="modalContenido"></div></div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let db = [];
+    const mesesNombres = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+    async function loadData() {
+        try {
+            const res = await fetch('datos.json?v=' + Date.now());
+            if (res.ok) { db = await res.json(); render(); }
+        } catch (e) { console.log("Iniciando..."); }
+    }
+
+    function setFileName(id, input) {
+        if(input.files && input.files[0]) {
+            document.getElementById(id).value = input.files[0].name;
+        }
+    }
+
+    function setFileNamesMulti(id, input) {
+        if(input.files && input.files.length > 0) {
+            let names = [];
+            for(let i = 0; i < input.files.length; i++) {
+                names.push(input.files[i].name);
+            }
+            document.getElementById(id).value = JSON.stringify(names);
+        } else {
+            document.getElementById(id).value = 'N/A';
+        }
+    }
+
+    function toggleSidebar() { document.getElementById('sidebarAdmin').classList.toggle('active'); }
+    function toggleOtroPais() { document.getElementById('otroPaisInput').style.display = (document.getElementById('paisSel').value === 'Extranjero') ? 'block' : 'none'; }
+    function toggleOtraMoneda() { document.getElementById('otraMonedaInput').style.display = (document.getElementById('monedaSel').value === 'Otra') ? 'block' : 'none'; }
+    function sumarTotal() { const s = parseFloat(document.getElementById('subtotal').value)||0; const i = parseFloat(document.getElementById('iva').value)||0; document.getElementById('importeTotal').value = (s+i).toFixed(2); }
+
+    document.getElementById('facturaForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const editId = document.getElementById('editId').value;
+        const pFinal = document.getElementById('paisSel').value === 'Extranjero' ? document.getElementById('otroPaisInput').value : 'México';
+        const mFinal = document.getElementById('monedaSel').value === 'Otra' ? document.getElementById('otraMonedaInput').value : document.getElementById('monedaSel').value;
+
+        const data = {
+            id: editId ? parseInt(editId) : Date.now(),
+            concepto: document.getElementById('concepto').value.toUpperCase(),
+            nombreProv: document.getElementById('nombreProv').value.toUpperCase(),
+            rfc: document.getElementById('rfc').value.toUpperCase(),
+            proyecto: document.getElementById('proyectoSel').value,
+            categoria: document.getElementById('categoriaSel').value,
+            notas: document.getElementById('notas').value,
+            fecha: document.getElementById('fecha').value,
+            fecha2: document.getElementById('fecha2').value || '', // Nos aseguramos de que no de error si está vacío
+            mesNum: document.getElementById('fecha').value.split('-')[1],
+            anio: document.getElementById('fecha').value.split('-')[0],
+            subtotal: parseFloat(document.getElementById('subtotal').value),
+            iva: parseFloat(document.getElementById('iva').value),
+            importe: parseFloat(document.getElementById('importeTotal').value),
+            moneda: mFinal.toUpperCase(),
+            metodo: document.getElementById('metodo').value,
+            pais: pFinal.toUpperCase(),
+            fPdf: document.getElementById('fPdf').value,
+            fXml: document.getElementById('fXml').value,
+            tPdf: document.getElementById('tPdf').value
+        };
+
+        if (editId) { db[db.findIndex(x => x.id == editId)] = data; cancelarEdicion(); } else { db.push(data); }
+        render();
+        alert("Guardado. Descarga datos.json y actualízalo en GitHub.");
+    });
+
+    function render(data = db) {
+        const contenedor = document.getElementById('contenedorMeses');
+        contenedor.innerHTML = '';
+        data.sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+
+        const grupos = data.reduce((acc, item) => {
+            const label = `${mesesNombres[parseInt(item.mesNum)-1]} ${item.anio}`;
+            if (!acc[label]) acc[label] = [];
+            acc[label].push(item);
+            return acc;
+        }, {});
+
+        for (const [mes, registros] of Object.entries(grupos)) {
+            let tablaHTML = `<div class="mes-header shadow-sm">${mes}</div><div class="table-container mt-2"><table class="table table-hover align-middle small"><thead class="table-light"><tr><th><input type="checkbox" class="master-check" onclick="checkAllGroup(this)"></th><th>FECHA</th><th>CONCEPTO</th><th>PROVEEDOR</th><th>TOTAL</th><th>DOCS</th><th></th></tr></thead><tbody>`;
+            
+            registros.forEach(item => {
+                const bPdf = item.fPdf !== 'N/A' ? `<a href="Documentos/${mes}/Facturas/${item.fPdf}" target="_blank" rel="noopener noreferrer" download="${item.fPdf}" class="text-danger me-2"><i class="bi bi-file-pdf"></i></a>` : '<span class="na-text">N/A</span>';
+                const bXml = item.fXml !== 'N/A' ? `<a href="Documentos/${mes}/Facturas/${item.fXml}" target="_blank" rel="noopener noreferrer" download="${item.fXml}" class="text-info me-2"><i class="bi bi-filetype-xml"></i></a>` : '<span class="na-text">N/A</span>';
+                
+                let ticketsArray = [];
+                if (item.tPdf && item.tPdf !== 'N/A') {
+                    try {
+                        ticketsArray = JSON.parse(item.tPdf);
+                        if (!Array.isArray(ticketsArray)) ticketsArray = [item.tPdf];
+                    } catch(e) {
+                        ticketsArray = [item.tPdf];
+                    }
+                }
+                
+                let bTic = '';
+                if (ticketsArray.length > 0) {
+                    ticketsArray.forEach((t, idx) => {
+                        bTic += `<a href="Documentos/${mes}/Tickets/${t}" target="_blank" rel="noopener noreferrer" download="${t}" class="text-warning me-1 text-decoration-none" title="${t}"><i class="bi bi-ticket"></i><sup style="font-size:0.6rem">${ticketsArray.length > 1 ? idx+1 : ''}</sup></a>`;
+                    });
+                } else {
+                    bTic = '<span class="na-text">N/A</span>';
+                }
+                
+                const badgeMetodo = item.metodo === 'Efectivo' 
+                    ? `<span class="badge bg-success small mt-1">Efectivo</span>` 
+                    : `<span class="badge bg-primary small mt-1">Tarjeta</span>`;
+                
+                const badgeProyecto = item.proyecto === 'EXPOPACK 2026'
+                    ? `<span class="badge bg-warning text-dark small mt-1 ms-1"><i class="bi bi-star-fill"></i> EXPOPACK</span>`
+                    : '';
+                    
+                const iconoCat = item.categoria === 'Alimentos' ? 'bi-cup-straw' : (item.categoria === 'Estacionamiento/parking' ? 'bi-p-circle' : (item.categoria === 'Gasolina' ? 'bi-fuel-pump' : 'bi-tag'));
+                const badgeCategoria = `<span class="badge bg-secondary text-white small mt-1 ms-1"><i class="bi ${iconoCat}"></i> ${item.categoria || 'Otro'}</span>`;
+                
+                const txtNota = (item.notas && item.notas.trim() !== '') ? `<div class="text-muted mt-1" style="font-size: 0.7rem;"><i class="bi bi-chat-text me-1"></i>${item.notas}</div>` : '';
+                
+                const txtFecha = item.fecha + (item.fecha2 ? `<br><span class="text-muted" style="font-size: 0.7rem;">al ${item.fecha2}</span>` : '');
+
+                tablaHTML += `<tr><td><input type="checkbox" class="row-check" data-id="${item.id}" onchange="calcSum()"></td><td><small>${txtFecha}</small></td><td><span class="concepto-link small" onclick="verDetalle(${item.id})">${item.concepto}</span>${txtNota}</td><td><div class="small fw-bold">${item.nombreProv}</div><small class="text-muted">${item.rfc}</small></td><td class="fw-bold">${item.moneda} $${item.importe}<br>${badgeMetodo}${badgeCategoria}${badgeProyecto}</td><td>${bPdf}${bXml}${bTic}</td><td><button class="btn btn-sm text-primary p-0 me-2" onclick="prepararEdicion(${item.id})"><i class="bi bi-pencil"></i></button><button class="btn btn-sm text-danger p-0" onclick="del(${item.id})"><i class="bi bi-trash"></i></button></td></tr>`;
+            });
+            contenedor.innerHTML += tablaHTML + `</tbody></table></div>`;
+        }
+        calcAnual();
+    }
+
+    function verDetalle(id) {
+        const i = db.find(x => x.id == id);
+        const labelMes = `${mesesNombres[parseInt(i.mesNum)-1]} ${i.anio}`;
+        
+        let ticketsArray = [];
+        if (i.tPdf && i.tPdf !== 'N/A') {
+            try {
+                ticketsArray = JSON.parse(i.tPdf);
+                if (!Array.isArray(ticketsArray)) ticketsArray = [i.tPdf];
+            } catch(e) {
+                ticketsArray = [i.tPdf];
+            }
+        }
+        
+        let modalTickets = '';
+        ticketsArray.forEach((t, idx) => {
+            modalTickets += `<a href="Documentos/${labelMes}/Tickets/${t}" target="_blank" download class="btn btn-sm btn-outline-warning mb-1"><i class="bi bi-ticket"></i> TICKET ${ticketsArray.length > 1 ? idx+1 : ''}</a> `;
+        });
+
+        const modalNota = (i.notas && i.notas.trim() !== '') ? `<div class="alert alert-warning py-2 px-3 mt-2 small mb-0 rounded-3 shadow-sm border-warning"><b><i class="bi bi-info-circle me-1"></i> Estatus/Notas:</b> ${i.notas}</div>` : '';
+        const txtFechasModal = i.fecha + (i.fecha2 ? ` <strong>al</strong> ${i.fecha2}` : '');
+        
+        document.getElementById('modalContenido').innerHTML = `
+            <div class="small">
+                ${i.proyecto === 'EXPOPACK 2026' ? '<span class="badge bg-warning text-dark mb-2 me-1">EXPOPACK 2026</span>' : ''}
+                <span class="badge bg-secondary text-white mb-2">${i.categoria || 'Otro'}</span>
+                <div class="text-muted float-end mb-1"><i class="bi bi-calendar3"></i> ${txtFechasModal}</div>
+                <p class="mb-1 text-muted fw-bold clear-both mt-2">CONCEPTO</p><h5>${i.concepto}</h5>
+                ${modalNota}
+                <hr>
+                <div class="row mb-3">
+                    <div class="col-6"><b>Proveedor:</b><br>${i.nombreProv}</div>
+                    <div class="col-6"><b>RFC Empresa:</b><br>${i.rfc}</div>
+                </div>
+                <div class="p-3 border rounded bg-light">
+                    <div class="d-flex justify-content-between"><span>Subtotal:</span><span>$${i.subtotal}</span></div>
+                    <div class="d-flex justify-content-between"><span>IVA:</span><span>$${i.iva}</span></div>
+                    <div class="d-flex justify-content-between text-primary fw-bold mt-1 border-top pt-1"><span>TOTAL:</span><span>${i.moneda} $${i.importe}</span></div>
+                </div>
+                <p class="mt-3 mb-0"><b>Método:</b> ${i.metodo} | <b>País:</b> ${i.pais}</p>
+                <hr>
+                <p class="fw-bold mb-2">DESCARGAR DOCUMENTOS:</p>
+                <div class="d-flex flex-wrap gap-2">
+                    ${i.fPdf !== 'N/A' ? `<a href="Documentos/${labelMes}/Facturas/${i.fPdf}" target="_blank" download class="btn btn-sm btn-outline-danger mb-1"><i class="bi bi-file-pdf"></i> PDF</a>` : ''}
+                    ${i.fXml !== 'N/A' ? `<a href="Documentos/${labelMes}/Facturas/${i.fXml}" target="_blank" download class="btn btn-sm btn-outline-info mb-1"><i class="bi bi-filetype-xml"></i> XML</a>` : ''}
+                    ${modalTickets}
+                </div>
+            </div>`;
+        new bootstrap.Modal(document.getElementById('detalleModal')).show();
+    }
+
+    function calcAnual() {
+        let totals = {}; db.forEach(e => { totals[e.moneda] = (totals[e.moneda] || 0) + parseFloat(e.importe); });
+        document.getElementById('resumenAnual').innerHTML = Object.entries(totals).map(v => `<div class="col-6 col-md-3"><div class="border border-secondary p-2 rounded text-center"><small class="text-muted d-block">${v[0]}</small><span class="h5 fw-bold">$${v[1].toLocaleString()}</span></div></div>`).join('');
+    }
+
+    function prepararEdicion(id) {
+        const i = db.find(x => x.id == id);
+        document.getElementById('editId').value = i.id;
+        document.getElementById('concepto').value = i.concepto;
+        document.getElementById('nombreProv').value = i.nombreProv;
+        document.getElementById('rfc').value = i.rfc;
+        document.getElementById('proyectoSel').value = i.proyecto || 'General';
+        document.getElementById('categoriaSel').value = i.categoria || 'Otro';
+        document.getElementById('notas').value = i.notas || '';
+        document.getElementById('fecha').value = i.fecha;
+        document.getElementById('fecha2').value = i.fecha2 || '';
+        document.getElementById('subtotal').value = i.subtotal;
+        document.getElementById('iva').value = i.iva;
+        document.getElementById('fPdf').value = i.fPdf;
+        document.getElementById('fXml').value = i.fXml;
+        document.getElementById('tPdf').value = i.tPdf;
+        sumarTotal();
+        document.getElementById('btnSubmit').innerText = 'ACTUALIZAR';
+        document.getElementById('btnSubmit').className = 'btn btn-warning btn-sm w-100 fw-bold';
+        document.getElementById('btnCancelar').classList.remove('d-none');
+        document.getElementById('sidebarAdmin').classList.add('edit-mode');
+        if(window.innerWidth < 768) toggleSidebar();
+        window.scrollTo(0,0);
+    }
+
+    function cancelarEdicion() { document.getElementById('facturaForm').reset(); document.getElementById('editId').value = ''; document.getElementById('proyectoSel').value = 'General'; document.getElementById('categoriaSel').value = 'Otro'; document.getElementById('notas').value = ''; document.getElementById('fecha2').value = ''; document.getElementById('tPdf').value = 'N/A'; document.getElementById('btnSubmit').innerText = 'GUARDAR GASTO'; document.getElementById('btnSubmit').className = 'btn btn-info btn-sm w-100 fw-bold'; document.getElementById('btnCancelar').classList.add('d-none'); document.getElementById('sidebarAdmin').classList.remove('edit-mode'); }
+    function exportarJSON() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db)); const dlAnchor = document.createElement('a'); dlAnchor.setAttribute("href", dataStr); dlAnchor.setAttribute("download", "datos.json"); dlAnchor.click(); }
+    
+    function buscar() { 
+        const t = document.getElementById('buscador').value.toUpperCase(); 
+        const metodoFiltro = document.getElementById('filtroMetodo').value;
+        const proyectoFiltro = document.getElementById('filtroProyecto').value;
+        const categoriaFiltro = document.getElementById('filtroCategoria').value;
+
+        render(db.filter(x => {
+            const coincideTexto = x.concepto.includes(t) || x.rfc.includes(t) || x.nombreProv.includes(t);
+            const coincideMetodo = (metodoFiltro === "Todos") || (x.metodo === metodoFiltro);
+            const valorProyecto = x.proyecto || 'General'; 
+            const coincideProyecto = (proyectoFiltro === "Todos") || (valorProyecto === proyectoFiltro);
+            
+            const valorCategoria = x.categoria || 'Otro';
+            const coincideCategoria = (categoriaFiltro === "Todas") || (valorCategoria === categoriaFiltro);
+            
+            return coincideTexto && coincideMetodo && coincideProyecto && coincideCategoria;
+        })); 
+    }
+
+    function checkAllGroup(el) { const checks = el.closest('table').querySelectorAll('.row-check'); checks.forEach(c => c.checked = el.checked); calcSum(); }
+    
+    function calcSum() {
+        const sel = document.querySelectorAll('.row-check:checked');
+        let totals = {}; sel.forEach(cb => { const e = db.find(x => x.id == cb.dataset.id); totals[e.moneda] = (totals[e.moneda] || 0) + parseFloat(e.importe); });
+        document.getElementById('totalMes').innerHTML = sel.length === 0 ? "$ 0.00" : Object.entries(totals).map(v => `<span class="me-3">${v[0]} $${v[1].toLocaleString()}</span>`).join(' | ');
+    }
+    
+    function del(id) { if(confirm('¿Borrar?')) { db = db.filter(x => x.id !== id); render(); } }
+
+    function exportarExcelSeleccionados() {
+        const checkboxes = document.querySelectorAll('.row-check:checked');
+        if (checkboxes.length === 0) {
+            alert("Por favor, selecciona primero las casillas de las facturas que deseas incluir en el reporte.");
+            return;
+        }
+        
+        let csvContent = "\uFEFF"; 
+        csvContent += "FECHA 1,FECHA 2,CONCEPTO,PROVEEDOR,RFC,PROYECTO,CATEGORIA,NOTAS,SUBTOTAL,IVA,TOTAL,MONEDA,METODO,PAIS\n";
+        
+        checkboxes.forEach(cb => {
+            const item = db.find(x => x.id == cb.dataset.id);
+            if (item) {
+                const concepto = `"${item.concepto.replace(/"/g, '""')}"`;
+                const proveedor = `"${item.nombreProv.replace(/"/g, '""')}"`;
+                const proyecto = `"${(item.proyecto || 'General').replace(/"/g, '""')}"`;
+                const categoria = `"${(item.categoria || 'Otro').replace(/"/g, '""')}"`;
+                const notas = `"${(item.notas || '').replace(/"/g, '""')}"`;
+                const fecha2 = item.fecha2 || '';
+                
+                csvContent += `${item.fecha},${fecha2},${concepto},${proveedor},${item.rfc},${proyecto},${categoria},${notas},${item.subtotal},${item.iva},${item.importe},${item.moneda},${item.metodo},${item.pais}\n`;
+            }
+        });
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", `Reporte_Gastos_Seleccionados.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function descargarDocumentosEnVolumen() {
+        const checkboxes = document.querySelectorAll('.row-check:checked');
+        if (checkboxes.length === 0) {
+            alert("Por favor, selecciona primero las casillas de los registros cuyos archivos deseas descargar.");
+            return;
+        }
+        
+        let conteoDescargas = 0;
+        
+        checkboxes.forEach(cb => {
+            const item = db.find(x => x.id == cb.dataset.id);
+            if (item) {
+                const labelMes = `${mesesNombres[parseInt(item.mesNum)-1]} ${item.anio}`;
+                
+                const procesarDescarga = (ruta, nombreArchivo) => {
+                    if (!nombreArchivo || nombreArchivo === 'N/A') return;
+                    conteoDescargas++;
+                    
+                    const link = document.createElement("a");
+                    link.href = ruta;
+                    link.download = nombreArchivo;
+                    link.target = "_blank";
+                    document.body.appendChild(link);
+                    
+                    setTimeout(() => {
+                        link.click();
+                        document.body.removeChild(link);
+                    }, conteoDescargas * 300);
+                };
+                
+                procesarDescarga(`Documentos/${labelMes}/Facturas/${item.fPdf}`, item.fPdf);
+                procesarDescarga(`Documentos/${labelMes}/Facturas/${item.fXml}`, item.fXml);
+                
+                let ticketsArray = [];
+                if (item.tPdf && item.tPdf !== 'N/A') {
+                    try {
+                        ticketsArray = JSON.parse(item.tPdf);
+                        if (!Array.isArray(ticketsArray)) ticketsArray = [item.tPdf];
+                    } catch(e) {
+                        ticketsArray = [item.tPdf];
+                    }
+                }
+                
+                ticketsArray.forEach(t => {
+                    procesarDescarga(`Documentos/${labelMes}/Tickets/${t}`, t);
+                });
+            }
+        });
+        
+        if (conteoDescargas > 0) {
+            alert(`Iniciando descarga en cadena de ${conteoDescargas} archivos.\n\n⚠️ NOTA IMPORTANTE: Si es la primera vez que lo usas, el navegador podría mostrar una advertencia en la barra de direcciones solicitando permiso para "Permitir descargas múltiples". Dile que SÍ para que bajen todos.`);
+        } else {
+            alert("Los registros seleccionados no tienen archivos adjuntos (aparecen como N/A).");
+        }
+    }
+
+    loadData();
+</script>
+</body>
+</html>
